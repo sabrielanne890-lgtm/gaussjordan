@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gauss‑Jordan Elimination Calculator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Crimson Pro', 'Segoe UI', serif;
+            background: #0f1729;
+            color: #e8edf5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #1a2744;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #f59e0b;
+            text-align: center;
+            margin-top: 0;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            align-items: center;
+        }
+
+        .controls label {
+            font-weight: bold;
+        }
+
+        select, button {
+            background: #0f1729;
+            color: white;
+            border: 1px solid #f59e0b;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        select:hover, button:hover {
+            background: #f59e0b;
+            color: #0f1729;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .matrix-input {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            margin: 0 auto;
+            border-collapse: collapse;
+            background: #0f1729;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        th {
+            background: #111827;
+            color: #f59e0b;
+        }
+
+        input {
+            width: 80px;
+            padding: 8px;
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: white;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #f59e0b;
+        }
+
+        .result-area {
+            background: #0f1729;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .step {
+            border-bottom: 1px solid #334155;
+            padding: 10px 0;
+            margin: 5px 0;
+        }
+
+        .solution {
+            color: #f59e0b;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        hr {
+            border-color: #334155;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>✧ Gauss‑Jordan Elimination Calculator ✧</h1>
+    <p style="text-align:center">Solve <strong>Ax = b</strong> by transforming the augmented matrix into RREF.</p>
+
+    <div class="controls">
+        <label>Matrix size (equations): </label>
+        <select id="matrixSize">
+            <option value="2">2 × 2</option>
+            <option value="3" selected>3 × 3</option>
+            <option value="4">4 × 4</option>
+            <option value="5">5 × 5</option>
+        </select>
+        <button id="generateBtn">Generate Matrix</button>
+        <button id="solveBtn">▶ Compute RREF</button>
+        <button id="resetBtn">⟳ Reset</button>
+    </div>
+
+    <div class="matrix-input" id="matrixContainer">
+        <!-- Dynamic matrix table will appear here -->
+    </div>
+
+    <div class="result-area" id="resultArea">
+        <p>Enter coefficients and click <strong>Compute RREF</strong>.</p>
+    </div>
+    <footer>Uses exact rational arithmetic (fractions). Shows row operations and final solution.</footer>
+</div>
+
+<script>
+    // Fraction arithmetic (simple, exact)
+    class Fraction {
+        constructor(numerator, denominator = 1) {
+            if (denominator === 0) throw new Error("Denominator cannot be zero");
+            if (typeof numerator !== 'number') numerator = parseFloat(numerator);
+            if (typeof denominator !== 'number') denominator = parseFloat(denominator);
+            let num = numerator;
+            let den = denominator;
+            if (den < 0) { num = -num; den = -den; }
+            const gcdVal = this.gcd(Math.abs(num), den);
+            this.num = num / gcdVal;
+            this.den = den / gcdVal;
+        }
+
+        gcd(a, b) {
+            if (b === 0) return a;
+            return this.gcd(b, a % b);
+        }
+
+        add(other) {
+            const newNum = this.num * other.den + other.num * this.den;
+            const newDen = this.den * other.den;
+            return new Fraction(newNum, newDen);
+        }
+
+        sub(other) {
+            const newNum = this.num * other.den - other.num * this.den;
+            const newDen = this.den * other.den;
+            return new Fraction(newNum, newDen);
+        }
+
+        mul(other) {
+            return new Fraction(this.num * other.num, this.den * other.den);
+        }
+
+        div(other) {
+            if (other.num === 0) throw new Error("Division by zero");
+            return new Fraction(this.num * other.den, this.den * other.num);
+        }
+
+        equals(other) {
+            return this.num === other.num && this.den === other.den;
+        }
+
+        isZero() {
+            return this.num === 0;
+        }
+
+        toString() {
+            if (this.den === 1) return `${this.num}`;
+            return `${this.num}/${this.den}`;
+        }
+
+        toFloat() {
+            return this.num / this.den;
+        }
+
+        static fromString(s) {
+            if (s.includes('/')) {
+                let [n, d] = s.split('/');
+                return new Fraction(parseInt(n), parseInt(d));
+            }
+            return new Fraction(parseFloat(s));
+        }
+    }
+
+    let currentSize = 3;
+    let matrixData = []; // 2D array of Fraction
+
+    function createMatrixTable(size) {
+        const container = document.getElementById('matrixContainer');
+        let html = '<table><thead><tr><th>Equation</th>';
+        for (let i = 0; i < size; i++) {
+            html += `<th>x${i+1}</th>`;
+        }
+        html += `<th>= b (const.)</th></tr></thead><tbody>`;
+
+        for (let i = 0; i < size; i++) {
+            html += `<tr><td style="background:#111827">Eq ${i+1}</td>`;
+            for (let j = 0; j < size; j++) {
+                html += `<td><input type="text" id="cell_${i}_${j}" value="0" style="width:70px"></td>`;
+            }
+            html += `<td><input type="text" id="cell_${i}_${size}" value="0" style="width:70px"></td>`;
+            html += `</tr>`;
+        }
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+    }
+
+    function readMatrixFromInputs(size) {
+        let mat = [];
+        for (let i = 0; i < size; i++) {
+            let row = [];
+            for (let j = 0; j <= size; j++) { // augmented: j up to size (constants)
+                let val = document.getElementById(`cell_${i}_${j}`).value;
+                if (val === "") val = "0";
+                try {
+                    row.push(Fraction.fromString(val));
+                } catch(e) {
+                    row.push(new Fraction(0));
+                }
+            }
+            mat.push(row);
+        }
+        return mat;
+    }
+
+    function fractionMatrixToString(matrix) {
+        // matrix: rows, each row has length = size+1 (augmented)
+        let str = "";
+        for (let i = 0; i < matrix.length; i++) {
+            let rowStr = "";
+            for (let j = 0; j < matrix[0].length; j++) {
+                rowStr += matrix[i][j].toString().padStart(10);
+            }
+            str += rowStr + "\n";
+        }
+        return str;
+    }
+
+    // Gauss-Jordan elimination returning { rref, steps, solution }
+    function gaussJordan(matrix) {
+        const rows = matrix.length;
+        const cols = matrix[0].length; // = rows+1 for augmented
+        let A = matrix.map(row => row.slice()); // deep copy
+        let steps = [];
+        steps.push("Initial augmented matrix:\n" + fractionMatrixToString(A));
+
+        let lead = 0; // column index
+        for (let r = 0; r < rows; r++) {
+            if (lead >= cols-1) break;
+            let i = r;
+            while (i < rows && A[i][lead].isZero()) i++;
+            if (i === rows) {
+                lead++;
+                r--;
+                continue;
+            }
+            // swap row i and r
+            if (i !== r) {
+                [A[i], A[r]] = [A[r], A[i]];
+                steps.push(`Swap R${i+1} ↔ R${r+1}:\n` + fractionMatrixToString(A));
+            }
+            // normalize pivot row (make pivot = 1)
+            let pivot = A[r][lead];
+            if (!pivot.equals(new Fraction(1))) {
+                for (let k = lead; k < cols; k++) {
+                    A[r][k] = A[r][k].div(pivot);
+                }
+                steps.push(`R${r+1} → R${r+1} / ${pivot.toString()}:\n` + fractionMatrixToString(A));
+            }
+            // eliminate above and below
+            for (let i2 = 0; i2 < rows; i2++) {
+                if (i2 !== r && !A[i2][lead].isZero()) {
+                    let factor = A[i2][lead];
+                    for (let k = lead; k < cols; k++) {
+                        A[i2][k] = A[i2][k].sub(factor.mul(A[r][k]));
+                    }
+                    steps.push(`R${i2+1} → R${i2+1} - ${factor.toString()} * R${r+1}:\n` + fractionMatrixToString(A));
+                }
+            }
+            lead++;
+        }
+
+        // check consistency and extract solution
+        let consistent = true;
+        let solution = [];
+        let rank = 0;
+        for (let i = 0; i < rows; i++) {
+            let allZero = true;
+            for (let j = 0; j < cols-1; j++) {
+                if (!A[i][j].isZero()) { allZero = false; break; }
+            }
+            if (allZero && !A[i][cols-1].isZero()) {
+                consistent = false;
+                solution = ["No solution (inconsistent system)"];
+                break;
+            }
+            if (!allZero) rank++;
+        }
+
+        if (consistent) {
+            // find leading ones
+            let variables = cols-1;
+            for (let j = 0; j < variables; j++) {
+                let pivotRow = -1;
+                for (let i = 0; i < rows; i++) {
+                    if (!A[i][j].isZero() && (pivotRow === -1 || A[i][j].equals(new Fraction(1)))) {
+                        // check if it's the only non-zero in that column? Actually in RREF, pivot row is unique.
+                        pivotRow = i;
+                        break;
+                    }
+                }
+                if (pivotRow !== -1 && A[pivotRow][j].equals(new Fraction(1))) {
+                    // check if other entries in column are zero (RREF property)
+                    let ok = true;
+                    for (let i = 0; i < rows; i++) {
+                        if (i !== pivotRow && !A[i][j].isZero()) ok = false;
+                    }
+                    if (ok) {
+                        solution.push({ variable: j, value: A[pivotRow][cols-1] });
+                    } else {
+                        // not strictly RREF? but our elimination ensures it.
+                        solution.push({ variable: j, value: A[pivotRow][cols-1] });
+                    }
+                } else {
+                    solution.push({ variable: j, value: null }); // free variable
+                }
+            }
+        }
+
+        return { rref: A, steps, consistent, solution, rank };
+    }
+
+    function displayResults() {
+        const size = currentSize;
+        const matrix = readMatrixFromInputs(size);
+        const resultDiv = document.getElementById('resultArea');
+        try {
+            const { rref, steps, consistent, solution, rank } = gaussJordan(matrix);
+            let html = `<h3>📐 Gauss‑Jordan Elimination (RREF)</h3>`;
+            html += `<div><strong>Steps:</strong></div>`;
+            steps.forEach((step, idx) => {
+                html += `<div class="step"><pre>${step}</pre></div>`;
+            });
+            html += `<hr><div><strong>✅ Final RREF:</strong></div><pre>${fractionMatrixToString(rref)}</pre>`;
+            if (consistent) {
+                html += `<div class="solution">📌 Solution:</div><pre>`;
+                let solutionVars = [];
+                for (let v of solution) {
+                    if (v.value !== null) {
+                        solutionVars.push(`x${v.variable+1} = ${v.value.toString()}`);
+                    } else {
+                        solutionVars.push(`x${v.variable+1} = free variable`);
+                    }
+                }
+                if (solutionVars.length === size) {
+                    html += solutionVars.join(", ");
+                } else {
+                    html += "System has infinitely many solutions.<br>" + solutionVars.join(", ");
+                }
+                html += `</pre>`;
+            } else {
+                html += `<div class="solution">⚠️ No solution (inconsistent).</div>`;
+            }
+            resultDiv.innerHTML = html;
+        } catch (err) {
+            resultDiv.innerHTML = `<span style="color:red">Error: ${err.message}</span>`;
+        }
+    }
+
+    function generateEmptyMatrix() {
+        const size = parseInt(document.getElementById('matrixSize').value);
+        currentSize = size;
+        createMatrixTable(size);
+        document.getElementById('resultArea').innerHTML = '<p>Matrix ready. Enter values and click Compute.</p>';
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', generateEmptyMatrix);
+    document.getElementById('solveBtn').addEventListener('click', displayResults);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        generateEmptyMatrix();
+        for (let i = 0; i < currentSize; i++) {
+            for (let j = 0; j <= currentSize; j++) {
+                let inp = document.getElementById(`cell_${i}_${j}`);
+                if (inp) inp.value = "0";
+            }
+        }
+    });
+
+    // initial load
+    generateEmptyMatrix();
+</script>
+</body>
+</html>

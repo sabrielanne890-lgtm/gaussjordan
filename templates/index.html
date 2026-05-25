@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gauss-Jordan Elimination</title>
+
+    <!-- MathJax -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===== BASE STYLES ===== */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Crimson Pro', serif;
+            background: #0f1729;
+            color: #e8edf5;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: #1a2744;
+        }
+        header h1 {
+            color: #f59e0b;
+            font-size: 3rem;
+            margin: 0;
+        }
+        header p {
+            color: #a5b4fc;
+            font-size: 1.2rem;
+        }
+        nav {
+            text-align: center;
+            padding: 20px;
+            background: #111827;
+        }
+        nav button {
+            background: #1a2744;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        nav button:hover {
+            background: #f59e0b;
+            color: #0f1729;
+        }
+        .content-section {
+            max-width: 1100px;
+            margin: auto;
+            padding: 40px 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        .math-box {
+            background: #1a2744;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        .solution {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid #f59e0b;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        h2, h3 {
+            color: #f59e0b;
+        }
+        ul {
+            line-height: 1.6;
+        }
+        .step-button {
+            background: #f59e0b;
+            color: #0f1729;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .step-button:hover {
+            background: #eab308;
+        }
+        .steps-container {
+            background: #0f1729;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .step-item {
+            border-bottom: 1px solid #334155;
+            padding: 10px 0;
+            margin: 5px 0;
+        }
+        .step-matrix {
+            font-family: monospace;
+            margin: 10px 0;
+        }
+
+        /* ===== CALCULATOR STYLES (unchanged) ===== */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            align-items: center;
+        }
+        .controls label {
+            font-weight: bold;
+        }
+        select, button {
+            background: #0f1729;
+            color: white;
+            border: 1px solid #f59e0b;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        select:hover, button:hover {
+            background: #f59e0b;
+            color: #0f1729;
+        }
+        .matrix-input {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        table {
+            margin: 0 auto;
+            border-collapse: collapse;
+            background: #0f1729;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+        th {
+            background: #111827;
+            color: #f59e0b;
+        }
+        input {
+            width: 80px;
+            padding: 8px;
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: white;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 1rem;
+        }
+        input:focus {
+            outline: none;
+            border-color: #f59e0b;
+        }
+        .result-area {
+            background: #0f1729;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .solution-text {
+            color: #f59e0b;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        hr {
+            border-color: #334155;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Gauss-Jordan Elimination</h1>
+    <p>A Complete Method for Solving Systems of Linear Equations</p>
+</header>
+
+<nav>
+    <button onclick="showSection('theory')">Theory</button>
+    <button onclick="showSection('example1')">Example 1</button>
+    <button onclick="showSection('example2')">Example 2</button>
+    <button onclick="showSection('calculator')">🧮 Calculator</button>
+</nav>
+
+<!-- THEORY SECTION -->
+<section id="theory" class="content-section">
+    <h2>Mathematical Discussion</h2>
+    <p>
+        Gauss-Jordan elimination is a method for solving systems of linear equations
+        by transforming the augmented matrix into <strong>Reduced Row Echelon Form (RREF)</strong>.
+    </p>
+    <p>The elementary row operations are:</p>
+    <ul>
+        <li>Swap two rows</li>
+        <li>Multiply a row by a non-zero constant</li>
+        <li>Add a multiple of one row to another</li>
+    </ul>
+    <div class="math-box">
+        $$[A \mid b] \rightarrow [I \mid x]$$
+    </div>
+</section>
+
+<!-- EXAMPLE 1 with step-by-step -->
+<section id="example1" class="content-section hidden">
+    <h2>Example 1</h2>
+    <div class="math-box">
+        $$
+        \begin{cases}
+        2x + y - z = 8 \\
+        -3x - y + 2z = -11 \\
+        -2x + y + 2z = -3
+        \end{cases}
+        $$
+    </div>
+    <div class="math-box">
+        $$
+        \left[
+        \begin{array}{ccc|c}
+        2 & 1 & -1 & 8 \\
+        -3 & -1 & 2 & -11 \\
+        -2 & 1 & 2 & -3
+        \end{array}
+        \right]
+        $$
+    </div>
+    <button class="step-button" id="solveExample1Btn">📐 Solve Step‑by‑Step</button>
+    <div id="example1Steps" class="steps-container" style="display: none;">
+        <!-- Steps will appear here -->
+    </div>
+    <h3>Final Answer</h3>
+    <div class="solution">
+        $$x = 2,\quad y = 3,\quad z = -1$$
+    </div>
+</section>
+
+<!-- EXAMPLE 2 with step-by-step -->
+<section id="example2" class="content-section hidden">
+    <h2>Example 2</h2>
+    <div class="math-box">
+        $$
+        \begin{cases}
+        x + 2y + 3z = 9 \\
+        2x - y + z = 8 \\
+        3x - z = 3
+        \end{cases}
+        $$
+    </div>
+    <div class="math-box">
+        $$
+        \left[
+        \begin{array}{ccc|c}
+        1 & 2 & 3 & 9 \\
+        2 & -1 & 1 & 8 \\
+        3 & 0 & -1 & 3
+        \end{array}
+        \right]
+        $$
+    </div>
+    <button class="step-button" id="solveExample2Btn">📐 Solve Step‑by‑Step</button>
+    <div id="example2Steps" class="steps-container" style="display: none;">
+        <!-- Steps will appear here -->
+    </div>
+    <h3>Final Answer</h3>
+    <div class="solution">
+        $$x = 2,\quad y = -1,\quad z = 3$$
+    </div>
+</section>
+
+<!-- CALCULATOR SECTION (unchanged) -->
+<section id="calculator" class="content-section hidden">
+    <h2>Interactive Gauss‑Jordan Calculator</h2>
+    <p>Enter the augmented matrix (coefficients + constants). The calculator will perform elimination step by step and show the solution.</p>
+
+    <div class="controls">
+        <label>Matrix size (equations): </label>
+        <select id="matrixSize">
+            <option value="2">2 × 2</option>
+            <option value="3" selected>3 × 3</option>
+            <option value="4">4 × 4</option>
+            <option value="5">5 × 5</option>
+        </select>
+        <button id="generateBtn">Generate Matrix</button>
+        <button id="solveBtn">▶ Compute RREF</button>
+        <button id="resetBtn">⟳ Reset</button>
+    </div>
+
+    <div class="matrix-input" id="matrixContainer"></div>
+
+    <div class="result-area" id="resultArea">
+        <p>Choose size, enter coefficients, then click <strong>Compute RREF</strong>.</p>
+    </div>
+    <footer>Uses exact rational arithmetic (fractions). Shows each row operation and final solution.</footer>
+</section>
+
+<script>
+    // ========== FRACTION ARITHMETIC (same as before) ==========
+    class Fraction {
+        constructor(numerator, denominator = 1) {
+            if (denominator === 0) throw new Error("Denominator cannot be zero");
+            let num = numerator;
+            let den = denominator;
+            if (den < 0) { num = -num; den = -den; }
+            const gcdVal = this.gcd(Math.abs(num), den);
+            this.num = num / gcdVal;
+            this.den = den / gcdVal;
+        }
+        gcd(a, b) {
+            if (b === 0) return a;
+            return this.gcd(b, a % b);
+        }
+        add(other) {
+            return new Fraction(this.num * other.den + other.num * this.den, this.den * other.den);
+        }
+        sub(other) {
+            return new Fraction(this.num * other.den - other.num * this.den, this.den * other.den);
+        }
+        mul(other) {
+            return new Fraction(this.num * other.num, this.den * other.den);
+        }
+        div(other) {
+            if (other.num === 0) throw new Error("Division by zero");
+            return new Fraction(this.num * other.den, this.den * other.num);
+        }
+        equals(other) {
+            return this.num === other.num && this.den === other.den;
+        }
+        isZero() {
+            return this.num === 0;
+        }
+        toString() {
+            if (this.den === 1) return `${this.num}`;
+            return `${this.num}/${this.den}`;
+        }
+        static fromNumber(n) {
+            return new Fraction(n, 1);
+        }
+    }
+
+    // Convert a numeric matrix to Fraction matrix
+    function toFractionMatrix(numMatrix) {
+        return numMatrix.map(row => row.map(val => Fraction.fromNumber(val)));
+    }
+
+    // Format matrix as LaTeX (for MathJax)
+    function matrixToLatex(matrix, isAugmented = true) {
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        let latex = "\\left[\\begin{array}{";
+        // column alignment: center for coefficients, vertical bar before last column
+        for (let j = 0; j < cols; j++) {
+            if (isAugmented && j === cols-1) latex += "|";
+            latex += "c";
+        }
+        latex += "}";
+        for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < cols; j++) {
+                latex += matrix[i][j].toString();
+                if (j < cols-1) latex += " & ";
+            }
+            if (i < rows-1) latex += " \\\\ ";
+        }
+        latex += "\\end{array}\\right]";
+        return latex;
+    }
+
+    // Gauss-Jordan elimination returning { steps, finalMatrix, solutionVars }
+    function gaussJordanDetailed(matrix) {
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        let A = matrix.map(row => row.slice());
+        let steps = [];
+        steps.push({ operation: "Initial augmented matrix", matrix: copyMatrix(A) });
+
+        let lead = 0;
+        for (let r = 0; r < rows; r++) {
+            if (lead >= cols-1) break;
+            let i = r;
+            while (i < rows && A[i][lead].isZero()) i++;
+            if (i === rows) {
+                lead++;
+                r--;
+                continue;
+            }
+            if (i !== r) {
+                [A[i], A[r]] = [A[r], A[i]];
+                steps.push({ operation: `Swap R${i+1} ↔ R${r+1}`, matrix: copyMatrix(A) });
+            }
+            let pivot = A[r][lead];
+            if (!pivot.equals(new Fraction(1))) {
+                for (let k = lead; k < cols; k++) {
+                    A[r][k] = A[r][k].div(pivot);
+                }
+                steps.push({ operation: `R${r+1} → R${r+1} / ${pivot.toString()}`, matrix: copyMatrix(A) });
+            }
+            for (let i2 = 0; i2 < rows; i2++) {
+                if (i2 !== r && !A[i2][lead].isZero()) {
+                    let factor = A[i2][lead];
+                    for (let k = lead; k < cols; k++) {
+                        A[i2][k] = A[i2][k].sub(factor.mul(A[r][k]));
+                    }
+                    steps.push({ operation: `R${i2+1} → R${i2+1} - ${factor.toString()}·R${r+1}`, matrix: copyMatrix(A) });
+                }
+            }
+            lead++;
+        }
+        // Check consistency and extract solution
+        let consistent = true;
+        for (let i = 0; i < rows; i++) {
+            let allZero = true;
+            for (let j = 0; j < cols-1; j++) {
+                if (!A[i][j].isZero()) { allZero = false; break; }
+            }
+            if (allZero && !A[i][cols-1].isZero()) {
+                consistent = false;
+                break;
+            }
+        }
+        let solution = [];
+        if (consistent) {
+            for (let j = 0; j < cols-1; j++) {
+                let pivotRow = -1;
+                for (let i = 0; i < rows; i++) {
+                    if (!A[i][j].isZero() && A[i][j].equals(new Fraction(1))) {
+                        pivotRow = i;
+                        break;
+                    }
+                }
+                if (pivotRow !== -1) {
+                    solution.push({ varIndex: j, value: A[pivotRow][cols-1] });
+                } else {
+                    solution.push({ varIndex: j, value: null });
+                }
+            }
+        }
+        return { steps, finalMatrix: A, consistent, solution };
+    }
+
+    function copyMatrix(mat) {
+        return mat.map(row => row.slice());
+    }
+
+    // Render steps into a container (with MathJax)
+    function renderSteps(steps, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        let html = `<div><strong>Gauss‑Jordan elimination steps:</strong></div>`;
+        for (let idx = 0; idx < steps.length; idx++) {
+            const step = steps[idx];
+            const matrixLatex = matrixToLatex(step.matrix, true);
+            html += `<div class="step-item">
+                        <div>🔹 ${step.operation}</div>
+                        <div class="step-matrix">$$${matrixLatex}$$</div>
+                     </div>`;
+        }
+        // Add final RREF note
+        const lastMat = steps[steps.length-1].matrix;
+        const finalLatex = matrixToLatex(lastMat, true);
+        html += `<hr><div><strong>✅ Final RREF:</strong></div><div class="step-matrix">$$${finalLatex}$$</div>`;
+        container.innerHTML = html;
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch(e => console.log("MathJax error", e));
+        }
+    }
+
+    // Predefined matrices for examples (as numbers)
+    const example1Matrix = [
+        [2, 1, -1, 8],
+        [-3, -1, 2, -11],
+        [-2, 1, 2, -3]
+    ];
+    const example2Matrix = [
+        [1, 2, 3, 9],
+        [2, -1, 1, 8],
+        [3, 0, -1, 3]
+    ];
+
+    // Function to solve and display steps for a given matrix
+    function solveAndShowSteps(matrixNum, stepsContainerId) {
+        const fracMat = toFractionMatrix(matrixNum);
+        const { steps, consistent, solution } = gaussJordanDetailed(fracMat);
+        renderSteps(steps, stepsContainerId);
+        // Optionally also show solution interpretation
+        const container = document.getElementById(stepsContainerId);
+        if (consistent && solution) {
+            let solText = "<div class='solution-text'>📌 Solution:</div><div>";
+            for (let v of solution) {
+                if (v.value !== null) {
+                    solText += `x${v.varIndex+1} = ${v.value.toString()}, `;
+                } else {
+                    solText += `x${v.varIndex+1} = free variable, `;
+                }
+            }
+            solText = solText.replace(/, $/, "");
+            solText += "</div>";
+            container.innerHTML += solText;
+        } else if (!consistent) {
+            container.innerHTML += "<div class='solution-text'>⚠️ No solution (inconsistent system).</div>";
+        }
+    }
+
+    // Event listeners for example buttons
+    document.getElementById('solveExample1Btn').addEventListener('click', () => {
+        const stepsDiv = document.getElementById('example1Steps');
+        stepsDiv.style.display = 'block';
+        solveAndShowSteps(example1Matrix, 'example1Steps');
+    });
+    document.getElementById('solveExample2Btn').addEventListener('click', () => {
+        const stepsDiv = document.getElementById('example2Steps');
+        stepsDiv.style.display = 'block';
+        solveAndShowSteps(example2Matrix, 'example2Steps');
+    });
+
+    // ========== CALCULATOR CODE (unchanged but needed for functionality) ==========
+    let currentSize = 3;
+
+    function createMatrixTable(size) {
+        const container = document.getElementById('matrixContainer');
+        let html = '<table><thead><tr><th>Eq</th>';
+        for (let i = 0; i < size; i++) {
+            html += `<th>x${i+1}</th>`;
+        }
+        html += `<th>= b</th></tr></thead><tbody>`;
+        for (let i = 0; i < size; i++) {
+            html += `<tr><td style="background:#111827">${i+1}</td>`;
+            for (let j = 0; j < size; j++) {
+                html += `<td><input type="text" id="cell_${i}_${j}" value="0" style="width:70px"></td>`;
+            }
+            html += `<td><input type="text" id="cell_${i}_${size}" value="0" style="width:70px"></td>`;
+            html += `</tr>`;
+        }
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+    }
+
+    function readMatrixFromInputs(size) {
+        let mat = [];
+        for (let i = 0; i < size; i++) {
+            let row = [];
+            for (let j = 0; j <= size; j++) {
+                let val = document.getElementById(`cell_${i}_${j}`).value;
+                if (val === "") val = "0";
+                try {
+                    row.push(Fraction.fromString(val));
+                } catch(e) {
+                    row.push(new Fraction(0));
+                }
+            }
+            mat.push(row);
+        }
+        return mat;
+    }
+
+    function fractionMatrixToString(matrix) {
+        let str = "";
+        for (let i = 0; i < matrix.length; i++) {
+            let rowStr = "";
+            for (let j = 0; j < matrix[0].length; j++) {
+                rowStr += matrix[i][j].toString().padStart(12);
+            }
+            str += rowStr + "\n";
+        }
+        return str;
+    }
+
+    function gaussJordanCalculator(matrix) {
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        let A = matrix.map(row => row.slice());
+        let steps = [];
+        steps.push("Initial augmented matrix:\n" + fractionMatrixToString(A));
+        let lead = 0;
+        for (let r = 0; r < rows; r++) {
+            if (lead >= cols-1) break;
+            let i = r;
+            while (i < rows && A[i][lead].isZero()) i++;
+            if (i === rows) {
+                lead++;
+                r--;
+                continue;
+            }
+            if (i !== r) {
+                [A[i], A[r]] = [A[r], A[i]];
+                steps.push(`Swap R${i+1} ↔ R${r+1}:\n` + fractionMatrixToString(A));
+            }
+            let pivot = A[r][lead];
+            if (!pivot.equals(new Fraction(1))) {
+                for (let k = lead; k < cols; k++) {
+                    A[r][k] = A[r][k].div(pivot);
+                }
+                steps.push(`R${r+1} → R${r+1} / ${pivot.toString()}:\n` + fractionMatrixToString(A));
+            }
+            for (let i2 = 0; i2 < rows; i2++) {
+                if (i2 !== r && !A[i2][lead].isZero()) {
+                    let factor = A[i2][lead];
+                    for (let k = lead; k < cols; k++) {
+                        A[i2][k] = A[i2][k].sub(factor.mul(A[r][k]));
+                    }
+                    steps.push(`R${i2+1} → R${i2+1} - ${factor.toString()} * R${r+1}:\n` + fractionMatrixToString(A));
+                }
+            }
+            lead++;
+        }
+        let consistent = true;
+        let solutionVals = [];
+        for (let i = 0; i < rows; i++) {
+            let allZero = true;
+            for (let j = 0; j < cols-1; j++) {
+                if (!A[i][j].isZero()) { allZero = false; break; }
+            }
+            if (allZero && !A[i][cols-1].isZero()) {
+                consistent = false;
+                break;
+            }
+        }
+        if (consistent) {
+            for (let j = 0; j < cols-1; j++) {
+                let pivotRow = -1;
+                for (let i = 0; i < rows; i++) {
+                    if (!A[i][j].isZero() && A[i][j].equals(new Fraction(1))) {
+                        pivotRow = i;
+                        break;
+                    }
+                }
+                if (pivotRow !== -1) {
+                    solutionVals.push({ varIndex: j, value: A[pivotRow][cols-1] });
+                } else {
+                    solutionVals.push({ varIndex: j, value: null });
+                }
+            }
+        }
+        return { rref: A, steps, consistent, solution: solutionVals };
+    }
+
+    function displayResults() {
+        const size = currentSize;
+        const matrix = readMatrixFromInputs(size);
+        const resultDiv = document.getElementById('resultArea');
+        try {
+            const { rref, steps, consistent, solution } = gaussJordanCalculator(matrix);
+            let html = `<h3>📐 Gauss‑Jordan Elimination (RREF)</h3>`;
+            html += `<div><strong>Steps:</strong></div>`;
+            steps.forEach((step, idx) => {
+                html += `<div class="step"><pre>${step}</pre></div>`;
+            });
+            html += `<hr><div><strong>✅ Final RREF:</strong></div><pre>${fractionMatrixToString(rref)}</pre>`;
+            if (consistent) {
+                html += `<div class="solution-text">📌 Solution:</div><pre>`;
+                let solStrings = [];
+                for (let v of solution) {
+                    if (v.value !== null) {
+                        solStrings.push(`x${v.varIndex+1} = ${v.value.toString()}`);
+                    } else {
+                        solStrings.push(`x${v.varIndex+1} = free variable`);
+                    }
+                }
+                if (solution.length === size && solStrings.every(s => !s.includes("free"))) {
+                    html += solStrings.join(", ");
+                } else {
+                    html += "System has infinitely many solutions.<br>" + solStrings.join(", ");
+                }
+                html += `</pre>`;
+            } else {
+                html += `<div class="solution-text">⚠️ No solution (inconsistent system).</div>`;
+            }
+            resultDiv.innerHTML = html;
+            if (window.MathJax) MathJax.typesetPromise();
+        } catch (err) {
+            resultDiv.innerHTML = `<span style="color:red">Error: ${err.message}</span>`;
+        }
+    }
+
+    function generateEmptyMatrix() {
+        const size = parseInt(document.getElementById('matrixSize').value);
+        currentSize = size;
+        createMatrixTable(size);
+        document.getElementById('resultArea').innerHTML = '<p>Matrix ready. Enter values and click Compute.</p>';
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', generateEmptyMatrix);
+    document.getElementById('solveBtn').addEventListener('click', displayResults);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        generateEmptyMatrix();
+        for (let i = 0; i < currentSize; i++) {
+            for (let j = 0; j <= currentSize; j++) {
+                let inp = document.getElementById(`cell_${i}_${j}`);
+                if (inp) inp.value = "0";
+            }
+        }
+    });
+
+    // ========== SECTION SWITCHING ==========
+    function showSection(sectionId) {
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.classList.add('hidden');
+        });
+        const activeSection = document.getElementById(sectionId);
+        if (activeSection) {
+            activeSection.classList.remove('hidden');
+        }
+        if (sectionId === 'calculator' && !document.getElementById('matrixContainer').innerHTML) {
+            generateEmptyMatrix();
+        }
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch(err => console.log('MathJax error:', err));
+        }
+    }
+
+    window.addEventListener('load', () => {
+        generateEmptyMatrix(); // pre-build calculator
+        if (window.MathJax) MathJax.typesetPromise();
+    });
+</script>
+
+</body>
+</html>
