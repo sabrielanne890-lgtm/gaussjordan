@@ -1,18 +1,12 @@
 from flask import Flask, render_template, request, jsonify
+import numpy as np
 from fractions import Fraction
 
 app = Flask(__name__)
 
-
 def gauss_jordan(matrix):
-    """Gauss-Jordan elimination with step tracking."""
-
-    # FIX: safer Fraction conversion (prevents float bugs)
-    m = [
-        [Fraction(str(x)).limit_denominator(1000) for x in row]
-        for row in matrix
-    ]
-
+    """Perform Gauss-Jordan elimination with step tracking."""
+    m = [[Fraction(x).limit_denominator(1000) for x in row] for row in matrix]
     rows, cols = len(m), len(m[0])
 
     steps = [{
@@ -27,13 +21,12 @@ def gauss_jordan(matrix):
         if pivot_row >= rows:
             break
 
-        # Find pivot row
+        # Find pivot
         max_row = max(
             range(pivot_row, rows),
             key=lambda r: abs(m[r][col])
         )
 
-        # FIX: skip if pivot is zero
         if m[max_row][col] == 0:
             continue
 
@@ -46,11 +39,8 @@ def gauss_jordan(matrix):
                 "matrix": format_matrix(m)
             })
 
-        # Scale pivot row
+        # Make pivot = 1
         scale = m[pivot_row][col]
-
-        if scale == 0:
-            continue
 
         if scale != 1:
             m[pivot_row] = [x / scale for x in m[pivot_row]]
@@ -62,6 +52,7 @@ def gauss_jordan(matrix):
 
         # Eliminate other rows
         for r in range(rows):
+
             if r != pivot_row and m[r][col] != 0:
 
                 factor = m[r][col]
@@ -93,18 +84,15 @@ def index():
 @app.route('/solve', methods=['POST'])
 def solve():
 
-    # FIX: safer JSON parsing
-    data = request.get_json()
-
-    if not data or "matrix" not in data:
-        return jsonify({"error": "No matrix provided"}), 400
-
-    matrix = data["matrix"]
+    data = request.json
+    matrix = data.get('matrix', [])
 
     steps = gauss_jordan(matrix)
 
-    return jsonify({"steps": steps})
+    return jsonify({
+        "steps": steps
+    })
 
 
-# VERCEL ENTRY POINT (IMPORTANT)
-app = app
+if __name__ == '__main__':
+    app.run(debug=True)
